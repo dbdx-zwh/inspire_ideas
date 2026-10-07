@@ -1,0 +1,252 @@
+// Prisma schema
+// 数据模型与 packages/shared/src/schemas 中的类型对应
+// 修改后运行 `npm run prisma:migrate` 生成迁移
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  papers          Paper[]
+  bloggers        Blogger[]
+  topics          Topic[]
+  archiveEntries  ArchiveEntry[]
+  ideas           Idea[]
+  anchors         Anchor[]
+  chatMessages    ChatMessage[]
+  aiCards         AICard[]
+  readerChat      ReaderChatMessage[]
+  crawlerCredentials CrawlerCredential[]
+  llmSetting      LlmSetting?
+}
+
+/// 用户自己的 LLM 配置（BYOK，per-user 隔离）。
+/// apiKeyEnc 用 AES-256-GCM 加密（与 CrawlerCredential 同密钥），
+/// 优先级：本表配置 > env 部署级默认 > 未配置报错。
+model LlmSetting {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   String   // 'deepseek' | 'gemini' | 'openai' | 'ollama' | 'compatible'
+  apiKeyEnc  String?  @db.Text
+  baseUrl    String?
+  modelMain  String?  // Chat 问答（main 任务）
+  modelFast  String?  // 结构化卡片/总结（fast 任务）
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+/// 爬虫登录态（per-user 隔离）。
+/// storageStateEnc 是 AES-256-GCM 加密后的 Playwright storageState JSON，
+/// 等价于用户密码，严禁打印日志。产品化部署时落库而非落盘，后端无状态。
+model CrawlerCredential {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform        String   // 'xiaohongshu'（未来可扩展 zhihu）
+  storageStateEnc String   @db.Text
+  status          String   @default("valid") // 'valid' | 'expired'
+  nickname        String?  // 绑定成功时识别到的平台昵称（尽力而为，可能为空）
+  lastVerifiedAt  DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, platform])
+  @@index([userId])
+}
+
+model Paper {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  authors        String[] // Postgres array
+  arxivId        String?
+  externalUrl    String
+  source         String   // 'arxiv' | 'blogger'
+  bloggerIds     String[] // 关联的博主 id 列表
+  abstract       String   @db.Text
+  aiSummary      String   @db.Text
+  tags           String[]
+  domain         String
+  publishedAt    DateTime
+  addedAt        DateTime @default(now())
+  readingMinutes Int
+  difficulty     String   // 'easy' | 'medium' | 'hard'
+  status         String   @default("unread")
+  content        String?  @db.Text
+  chapters       Json?    // Chapter[]
+
+  archiveEntries ArchiveEntry[]
+  aiCards        AICard[]
+  readerChat     ReaderChatMessage[]
+
+  @@index([userId, addedAt])
+  @@index([userId, status])
+  @@unique([userId, arxivId])
+}
+
+model Blogger {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String
+  avatarUrl          String?
+  externalUrl        String?
+  // 平台与平台上的用户编码
+  platform           String   @default("xiaohongshu") // 'xiaohongshu' | 'zhihu'（未来）
+  platformUserId     String   @default("")
+  // 关注 & 抓取状态
+  followedAt         DateTime @default(now())
+  crawlStatus        String   @default("idle") // 'idle' | 'crawling' | 'done' | 'failed'
+  crawlProgress      Int      @default(0)
+  crawlProgressLabel String?  // 例："已处理 12/50 篇帖子"
+  lastCrawledAt      DateTime?
+  errorMessage       String?  // 抓取失败时的诊断信息
+
+  posts BloggerPost[]
+
+  @@index([userId])
+  @@unique([userId, platform, platformUserId])
+}
+
+/// 博主抓到的原始帖子。用于溯源 + 二次抽取。
+model BloggerPost {
+  id                 String   @id @default(cuid())
+  bloggerId          String
+  blogger            Blogger  @relation(fields: [bloggerId], references: [id], onDelete: Cascade)
+  platformPostId     String   // 平台上帖子的唯一 id
+  title              String
+  content            String   @db.Text // 帖子原文
+  url                String
+  publishedAt        DateTime?
+  extractedArxivIds  String[] // 从这条帖子里抽取到的 arxivId
+  crawledAt          DateTime @default(now())
+
+  @@unique([bloggerId, platformPostId])
+  @@index([bloggerId, crawledAt])
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  parentId    String?
+  parent      Topic?   @relation("TopicHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Topic[]  @relation("TopicHierarchy")
+  paperCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  archiveEntries ArchiveEntry[]
+
+  @@index([userId, parentId])
+}
+
+model ArchiveEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paperId   String
+  paper     Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  topicId   String
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  summary   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId, paperId])
+  @@index([userId, topicId])
+  @@unique([paperId, topicId])
+}
+
+model Idea {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  sourcePaperIds  String[]
+  scenario        String   @db.Text
+  codeRef         String?
+  hypothesis      String   @db.Text
+  changes         String   @db.Text
+  sourceCitation  String   @db.Text
+  feasibility     Int      @default(3)
+  risk            String   @db.Text
+  status          String   @default("draft")
+
+  anchors      Anchor[]
+  chatMessages ChatMessage[]
+
+  @@index([userId, createdAt])
+}
+
+model Anchor {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([ideaId])
+}
+
+model ChatMessage {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ideaId             String
+  idea               Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  role               String   // 'user' | 'ai'
+  content            String   @db.Text
+  createdAt          DateTime @default(now())
+  createdAnchorIds   String[]
+
+  @@index([ideaId, createdAt])
+}
+
+model AICard {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paperId   String
+  paper     Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  type      String   // 'motivation' | 'method' | 'experiments' | 'limitations' | 'transferable'
+  title     String
+  content   String   @db.Text
+  order     Int      @default(0)
+  generatorVersion String @default("legacy")
+  updatedAt DateTime @updatedAt
+
+  @@unique([paperId, type])
+  @@index([userId, paperId])
+}
+
+model ReaderChatMessage {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paperId      String
+  paper        Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  role         String   // 'user' | 'ai'
+  content      String   @db.Text
+  citedAnchor  String?
+  createdAt    DateTime @default(now())
+
+  @@index([paperId, createdAt])
+}

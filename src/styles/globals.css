@@ -1,0 +1,235 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-bg-page text-text-primary font-sans;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  *:focus {
+    @apply outline-none;
+  }
+
+  *:focus-visible {
+    @apply ring-2 ring-primary/40 ring-offset-1 rounded-sm;
+  }
+
+  ::selection {
+    background-color: rgba(79, 70, 229, 0.15);
+  }
+
+  /* 隐藏 webkit 滚动条箭头，保留滚动 */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #D1D5DB;
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9CA3AF;
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+}
+
+@layer components {
+  /* AI 卡片顶部渐变条 */
+  .ai-gradient-bar {
+    background: linear-gradient(90deg, #8B5CF6 0%, #06B6D4 100%);
+  }
+
+  /* 通用 line-clamp 工具 */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* 论文正文样式 */
+  .paper-prose {
+    @apply font-serif text-[15px] leading-[1.75] text-text-primary;
+  }
+  .paper-prose h1 {
+    @apply text-[28px] font-semibold mt-8 mb-4 font-sans;
+  }
+  .paper-prose h2 {
+    @apply text-[22px] font-semibold mt-8 mb-3 font-sans;
+  }
+  .paper-prose h3 {
+    @apply text-[18px] font-semibold mt-6 mb-2 font-sans;
+  }
+  .paper-prose p {
+    @apply mb-4;
+  }
+  .paper-prose ul,
+  .paper-prose ol {
+    @apply mb-4 pl-6;
+  }
+  .paper-prose ul {
+    @apply list-disc;
+  }
+  .paper-prose ol {
+    @apply list-decimal;
+  }
+  .paper-prose li {
+    @apply mb-1;
+  }
+  .paper-prose code {
+    @apply font-mono text-[13px] bg-gray-100 px-1.5 py-0.5 rounded;
+  }
+  .paper-prose pre {
+    @apply bg-gray-50 border border-border rounded-md p-4 my-4 overflow-x-auto;
+  }
+  .paper-prose pre code {
+    @apply bg-transparent p-0;
+  }
+  .paper-prose blockquote {
+    @apply border-l-4 border-primary/30 pl-4 my-4 text-text-secondary italic;
+  }
+  .paper-prose table {
+    @apply my-4 border-collapse w-full;
+  }
+  .paper-prose th,
+  .paper-prose td {
+    @apply border border-border px-3 py-2 text-left;
+  }
+  .paper-prose th {
+    @apply bg-gray-50 font-semibold;
+  }
+  .paper-prose img {
+    @apply my-4 max-w-full mx-auto rounded border border-border;
+  }
+  .paper-prose a {
+    @apply text-primary underline underline-offset-2 hover:text-primary-hover;
+  }
+
+  /* AI 结构化卡片与 Chat 共用的 Markdown / KaTeX 样式 */
+  .ai-markdown {
+    @apply break-words text-left;
+  }
+  .ai-markdown > :first-child {
+    @apply mt-0;
+  }
+  .ai-markdown > :last-child {
+    @apply mb-0;
+  }
+  .ai-markdown p {
+    @apply mb-2;
+  }
+  .ai-markdown h1,
+  .ai-markdown h2,
+  .ai-markdown h3 {
+    @apply mb-2 mt-3 font-semibold leading-snug text-text-primary;
+  }
+  .ai-markdown h1 {
+    @apply text-base;
+  }
+  .ai-markdown h2 {
+    @apply text-[15px];
+  }
+  .ai-markdown h3 {
+    @apply text-sm;
+  }
+  .ai-markdown ul,
+  .ai-markdown ol {
+    @apply mb-2 space-y-1 pl-5;
+  }
+  .ai-markdown ul {
+    @apply list-disc;
+  }
+  .ai-markdown ol {
+    @apply list-decimal;
+  }
+  .ai-markdown blockquote {
+    @apply my-2 border-l-2 border-primary/30 pl-3 text-text-secondary;
+  }
+  .ai-markdown code {
+    @apply rounded bg-black/5 px-1 py-0.5 font-mono text-[12px];
+  }
+  .ai-markdown pre {
+    @apply my-2 overflow-x-auto rounded-md border border-border bg-gray-50 p-3;
+  }
+  .ai-markdown pre code {
+    @apply bg-transparent p-0;
+  }
+  .ai-markdown a {
+    @apply text-primary underline underline-offset-2 hover:text-primary-hover;
+  }
+  .ai-markdown-table {
+    @apply my-2 max-w-full overflow-x-auto rounded border border-border;
+  }
+  .ai-markdown table {
+    @apply w-full border-collapse text-xs;
+  }
+  .ai-markdown th,
+  .ai-markdown td {
+    @apply border-b border-r border-border px-2 py-1.5 text-left align-top last:border-r-0;
+  }
+  .ai-markdown th {
+    @apply bg-gray-50 font-semibold;
+  }
+  .ai-markdown tr:last-child td {
+    @apply border-b-0;
+  }
+  .ai-markdown .katex-display {
+    @apply my-3 max-w-full overflow-x-auto overflow-y-hidden py-1 text-left;
+  }
+  .ai-markdown .katex-display > .katex {
+    @apply text-[1.05em];
+  }
+  .paper-table-scroll {
+    @apply my-5 max-w-full overflow-x-auto rounded-lg border border-border bg-white shadow-sm;
+  }
+  .paper-table-scroll table {
+    @apply my-0 w-max min-w-full border-0 text-[13px] leading-5;
+  }
+  .paper-table-scroll th,
+  .paper-table-scroll td {
+    @apply min-w-[88px] whitespace-normal border-l-0 border-t-0 px-3 py-2 align-top;
+  }
+  .paper-table-scroll tr:last-child th,
+  .paper-table-scroll tr:last-child td {
+    @apply border-b-0;
+  }
+  .paper-table-scroll th:last-child,
+  .paper-table-scroll td:last-child {
+    @apply border-r-0;
+  }
+  .paper-image-wrap {
+    @apply relative my-5 block max-w-full overflow-hidden rounded-lg border border-border bg-white p-3 shadow-sm;
+  }
+  .paper-image-wrap img {
+    @apply my-0 max-h-[640px] max-w-full border-0 object-contain;
+  }
+  .paper-image-open {
+    @apply absolute right-5 top-5 inline-flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 font-sans text-[11px] text-text-secondary no-underline shadow-sm ring-1 ring-border transition-opacity hover:text-primary;
+  }
+}

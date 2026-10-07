@@ -1,0 +1,42 @@
+import type { Blogger } from '@/types';
+
+export const mockBloggers: Blogger[] = [
+  {
+    id: 'b_001',
+    name: '推荐系统前沿',
+    avatarUrl: '',
+    externalUrl: 'https://xiaohongshu.com/user/profile/mock-recsys',
+    platform: 'xiaohongshu',
+    platformUserId: 'mock-recsys',
+    recommendCount: 32,
+    deepReadRatio: 0.68,
+    followedAt: '2026-06-10T00:00:00Z',
+    crawlStatus: 'done',
+    crawlProgress: 100,
+    crawlProgressLabel: '演示数据',
+  },
+  {
+    id: 'b_002',
+    name: 'AI 论文速递',
+    platform: 'xiaohongshu',
+    platformUserId: 'mock-aipaper',
+    recommendCount: 15,
+    deepReadRatio: 0.4,
+    followedAt: '2026-07-01T00:00:00Z',
+    crawlStatus: 'done',
+    crawlProgress: 100,
+    crawlProgressLabel: '演示数据',
+  },
+  {
+    id: 'b_003',
+    name: 'LLM 工程实践',
+    platform: 'xiaohongshu',
+    platformUserId: 'mock-llm',
+    recommendCount: 3,
+    deepReadRatio: null,
+    followedAt: '2026-08-30T00:00:00Z',
+    crawlStatus: 'done',
+    crawlProgress: 100,
+    crawlProgressLabel: '演示数据',
+  },
+];
